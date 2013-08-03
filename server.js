@@ -16,6 +16,8 @@ app.use(express.bodyParser());
 // get the mysql file and connect to the database
 var db= require('./mysql');
 db.connectToDb();
+var crypto = require('./crypto');
+
 app.get('/testConnection/',function(request,response){
 	
 response.send(db.log);
@@ -23,9 +25,11 @@ response.send(db.log);
 });
 
 
-app.post('/post',function(request,response){
-	console.log(request.body['name'] + request.body['phone_number']);
-	db.addUser(request.body['name'], request.body['phone_number']);
+app.post('/user',function(request,response){
+	var hash = crypto.generateHash(request.body['name'] + request.body['phone_number']);
+	// pass name, number, and hash to the function
+	db.addUser(hash,request.body['name'], request.body['phone_number']);
+
 	
 });
 

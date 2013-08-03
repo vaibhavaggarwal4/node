@@ -17,16 +17,20 @@
 	host: 'localhost',
 	user: 'root',
 	password: 'makeitbig',
-	database:'phonebook',
+	database:'ContactBook',
 
 });
 
 // Create connection to the database
 var createConnection = function(){
 
+connection.connect(function(err){
 
+if(err) throw err;
 
-connection.connect();
+console.log("connected");
+
+});
 
 // To print out rows to console, just for our testing
 /*connection.query('SELECT * FROM phonebook',function(err,rows,fields){
@@ -38,8 +42,9 @@ console.log(rows);
 });*/
 
 }
-var addNewUser = function(name,number){
-connection.query('INSERT INTO phonebook (user_name,user_phone_number) VALUES ("'+name+'","' + number+'")',function(err,rows,fields){
+var addNewUser = function(hash,name,number){
+// check here if the user exists or not by querying the phone number first
+connection.query('INSERT INTO users (authorizationHash,user_name,user_phone_number,is_active) VALUES ("'+hash+'","'+name+'","' + number+'","1")',function(err,rows,fields){
 if(err) throw err;
 
 console.log(rows);
@@ -51,10 +56,10 @@ module.exports={
 
 connectToDb : function(){
 	createConnection();
-	console.log("connected");
+	
 },
-addUser : function(name,number){
-	addNewUser(name,number);
+addUser : function(hash,name,number){
+	addNewUser(hash,name,number);
 }
 
 
