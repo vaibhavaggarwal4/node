@@ -12,7 +12,6 @@
 var express = require('express');
 var app = express();
 app.use(express.bodyParser());
-
 // get the mysql file and connect to the database
 var db= require('./mysql');
 db.connectToDb();
@@ -25,14 +24,6 @@ response.send(db.log);
 });
 
 
-app.post('/user',function(request,response){
-	var hash = crypto.generateHash(request.body['name'] + request.body['phone_number']);
-	// pass name, number, and hash to the function
-	db.addUser(hash,request.body['name'], request.body['phone_number']);
-
-	
-});
-
 /*
 Define all GET and POST routes here
 */
@@ -40,6 +31,36 @@ Define all GET and POST routes here
 // Description : User logs in for the first time
 // @param : phone number, name, timeZone
 // @Return : Boolean addStatus, unique hash
+
+app.post('/user',function(request,response){
+	
+
+// TODO: set the response headers
+		var date = new Date();
+
+		if(request.body['unique_hash'] && request.body['phone_number']){
+			
+			db.updateUserLocalTime(request.body['unique_hash'],request.body['phone_number'],request.body['local_time'],date.getTime());
+			response.json({"status" : true});
+			}
+			
+			
+	if(!request.body['unique_hash']){
+		var hash = crypto.generateHash(request.body['name'] + request.body['phone_number']+date.getTime());
+		// pass name, number, and hash to the function
+		var result  = db.addUser(hash,request.body['name'], request.body['phone_number'],request.body['local_time'],date.getTime());
+		console.log(result);
+		// result is not correct, take care of it async
+		if(result){
+				response.json({"uniquehash" :hash});
+					}
+		else{
+		response.json("User already exists");
+			}
+	}
+
+	response.end();
+});
 
 
 
