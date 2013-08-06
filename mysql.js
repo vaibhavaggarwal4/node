@@ -79,6 +79,18 @@ var updateUserLocalTime = function(hash,number,time,syncTime){
 
 }
 
+
+var getContactInfo = function(hash,number){
+// Verify hash for the phone_number, retrieve the id and use that to get all the contact lists info
+// Retrieving just ID's right now
+connection.query('SELECT contact_id FROM contact_mapping WHERE user_id =(SELECT user_id FROM users WHERE user_phone_number="' + number +'")',function(err,rows,fields){
+if(err) throw err;
+
+console.log(rows);
+});
+
+}
+
 module.exports={
 
 connectToDb : function(){
@@ -92,8 +104,12 @@ addUser : function(hash,name,number,time,syncTime){
 },
 updateUserLocalTime : function(hash,number,time,syncTime){
 	updateUserLocalTime(hash,number,time,syncTime);
-}
+},
 
+getContactInfo : function(hash,number){
+	getContactInfo(hash,number);
+
+}
 
 };
 

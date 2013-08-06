@@ -38,6 +38,7 @@ app.post('/user',function(request,response){
 // TODO: set the response headers
 		var date = new Date();
 
+console.log(request.body['unique_hash']);
 		if(request.body['unique_hash'] && request.body['phone_number']){
 			
 			db.updateUserLocalTime(request.body['unique_hash'],request.body['phone_number'],request.body['local_time'],date.getTime());
@@ -62,6 +63,16 @@ app.post('/user',function(request,response){
 	response.end();
 });
 
+app.get('/user',function(request,response){
+
+console.log(request.query['phone_number']);
+console.log(request.query.phone_number);
+
+// Call function to retrieve the friend ID's, then use those ID's to get all the information about those contacts
+db.getContactInfo(request.query.unique_hash,request.query.phone_number);
+response.json(request.query['unique_hash']);
+response.end();
+});
 
 
 app.listen(process.env.PORT || 8080);
