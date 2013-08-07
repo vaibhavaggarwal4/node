@@ -1,0 +1,4 @@
+1. Pool the connection
+2. Optimize the queries
+3. callback return values
+4. set response header and content-type
