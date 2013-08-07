@@ -2,3 +2,4 @@
 2. Optimize the queries
 3. callback return values
 4. set response header and content-type
+5. Escape the sql parameters to stop avoid SQL injection
