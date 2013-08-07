@@ -42,7 +42,7 @@ console.log(request.body['unique_hash']);
 		if(request.body['unique_hash'] && request.body['phone_number']){
 			
 			db.updateUserLocalTime(request.body['unique_hash'],request.body['phone_number'],request.body['local_time'],date.getTime());
-			response.json({"status" : true});
+			response.json(200,{"status" : true});
 			}
 			
 			
@@ -53,10 +53,10 @@ console.log(request.body['unique_hash']);
 		console.log(result);
 		// result is not correct, take care of it async
 		if(result){
-				response.json({"uniquehash" :hash});
+				response.json(200,{"uniquehash" :hash});
 					}
 		else{
-		response.json("User already exists");
+		response.json(200,"User already exists");
 			}
 	}
 
@@ -65,12 +65,12 @@ console.log(request.body['unique_hash']);
 
 app.get('/user',function(request,response){
 
-console.log(request.query['phone_number']);
 console.log(request.query.phone_number);
+//response.set({"content-type":"text/json"});
 
 // Call function to retrieve the friend ID's, then use those ID's to get all the information about those contacts
 db.getContactInfo(request.query.unique_hash,request.query.phone_number);
-response.json(request.query['unique_hash']);
+response.json(200,request.query['unique_hash']);
 response.end();
 });
 
