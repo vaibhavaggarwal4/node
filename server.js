@@ -75,4 +75,18 @@ response.end();
 });
 
 
+
+var contactList = ["6507437883","6501234123","6505678567","9047654987","609876453"];
+db.updateContactInfo("hash","7019361484",contactList);
+app.post('/user/contacts',function(request,response){
+
+// parse the contacts from the response
+// send the array to mysql class
+// It will do the rest
+// send a response to the client telling the contact list was updated, or if there weren't any changes.
+// to get the updated contact time, we will have a get request
+
+});
+
+
 app.listen(process.env.PORT || 8080);

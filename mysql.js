@@ -97,7 +97,37 @@ console.log(rows);
 });}
 });
 
+}  
+
+// remove extraneous lines, check hash, decide what needs to be asynchronous and what not, and return to server
+var updateContactInfo = function(hash,number,contacts){
+var userID="";
+// we again want to verify the hash first
+connection.query('SELECT user_id FROM users WHERE user_phone_number="' + number +'"',function(err,rows,fields){
+if(err) throw err;
+userID=rows[0].user_id;
+connection.query('SELECT user_id FROM users WHERE user_phone_number IN ('+contacts+')',function(err,rows,fields){
+if(err) throw err;
+var insertValues="";
+for(row in rows)
+{
+insertValues=insertValues+"("+userID+","+rows[row].user_id+"),";
 }
+insertValues = insertValues.substring(0,insertValues.length-1);
+
+connection.query('INSERT IGNORE into contact_mapping (user_id,contact_id) VALUES ' +insertValues, function(err,rows,fields){
+if(err) throw err;
+
+console.log(rows);
+});
+});
+
+});
+
+
+
+}
+       
 
 module.exports={
 
@@ -117,6 +147,9 @@ updateUserLocalTime : function(hash,number,time,syncTime){
 getContactInfo : function(hash,number){
 	getContactInfo(hash,number);
 
+},
+updateContactInfo : function(hash,number,contacts){
+	updateContactInfo(hash,number,contacts);
 }
 
 };
