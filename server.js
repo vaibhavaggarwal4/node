@@ -16,13 +16,11 @@ app.use(express.bodyParser());
 var db= require('./mysql');
 db.connectToDb();
 var crypto = require('./crypto');
-
 app.get('/testConnection/',function(request,response){
 	
-response.send(db.log);
-
+response.json("Connected");
+response.end();
 });
-
 
 /*
 Define all GET and POST routes here
@@ -64,11 +62,7 @@ console.log(request.body['unique_hash']);
 });
 
 app.get('/user',function(request,response){
-
-console.log(request.query.phone_number);
 //response.set({"content-type":"text/json"});
-
-// Call function to retrieve the friend ID's, then use those ID's to get all the information about those contacts
 db.getContactInfo(request.query.unique_hash,request.query.phone_number);
 response.json(200,request.query['unique_hash']);
 response.end();
@@ -76,8 +70,8 @@ response.end();
 
 
 
-var contactList = ["6507437883","6501234123","6505678567","9047654987","609876453"];
-db.updateContactInfo("hash","7019361484",contactList);
+/*var contactList = ["6507437883","6501234123","6505678567","9047654987","609876453"];
+db.updateContactInfo("hash","7019361484",contactList);*/
 app.post('/user/contacts',function(request,response){
 
 // parse the contacts from the response

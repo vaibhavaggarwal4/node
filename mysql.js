@@ -44,24 +44,23 @@ console.log(rows);
 var addNewUser = function(hash,name,number,time,syncTime){
 
 // check here if the user exists or not by querying the phone number first
-connection.query('SELECT user_id FROM users WHERE user_phone_number ="' +number+'"',function(err,rows,fields){
+return connection.query('SELECT user_id FROM users WHERE user_phone_number ="' +number+'"',function(err,rows,fields){
 
-	if(rows[0]){
-		 return false;
-	}
-	else{
-		connection.query('INSERT INTO users (authorization_hash,user_name,user_phone_number,user_local_time,is_active,last_synced) VALUES ("'+hash+'","'+name+'","' + number+'","' +time+'","1","'+syncTime+'")',function(err,rows,fields){
-		if(err) throw err;
+	if(rows[0]) return false;
+	
+	connection.query('INSERT INTO users (authorization_hash,user_name,user_phone_number,user_local_time,is_active,last_synced) VALUES ("'+hash+'","'+name+'","' + number+'","' +time+'","1","'+syncTime+'")',function(err,rows,fields){
+	if(err) throw err;
 
-		return true;	
+	return true;	
 		});
-	}
+	
 });
-
-	return true;
-
 }
 
+function addNewUser(hash,name,number,time,syncTime){
+
+
+}
 
 var updateUserLocalTime = function(hash,number,time,syncTime){
 // First make sure that the hash matches
@@ -98,6 +97,9 @@ console.log(rows);
 });
 
 }  
+
+
+
 
 // remove extraneous lines, check hash, decide what needs to be asynchronous and what not, and return to server
 var updateContactInfo = function(hash,number,contacts){
@@ -136,8 +138,7 @@ connectToDb : function(){
 	
 },
 addUser : function(hash,name,number,time,syncTime){
-	return addNewUser(hash,name,number,time,syncTime);
-	
+	addNewUser(hash,name,number,time,syncTime);
 	
 },
 updateUserLocalTime : function(hash,number,time,syncTime){
