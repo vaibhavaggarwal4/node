@@ -41,60 +41,81 @@ console.log(rows);
 });*/
 
 }
-var addNewUser = function(hash,name,number,time,syncTime){
+var addNewUser = function(hash,name,number,time,syncTime,response,callback){
 
 // check here if the user exists or not by querying the phone number first
-return connection.query('SELECT user_id FROM users WHERE user_phone_number ="' +number+'"',function(err,rows,fields){
+connection.query('SELECT user_id FROM users WHERE user_phone_number ="' +number+'"',function(err,rows,fields){
 
-	if(rows[0]) return false;
+	if(rows[0]){
+		response.json(200,false);
+		response.end();
+	}
 	
-	connection.query('INSERT INTO users (authorization_hash,user_name,user_phone_number,user_local_time,is_active,last_synced) VALUES ("'+hash+'","'+name+'","' + number+'","' +time+'","1","'+syncTime+'")',function(err,rows,fields){
+	else{connection.query('INSERT INTO users (authorization_hash,user_name,user_phone_number,user_local_time,is_active,last_synced) VALUES ("'+hash+'","'+name+'","' + number+'","' +time+'","1","'+syncTime+'")',function(err,rows,fields){
 	if(err) throw err;
-
-	return true;	
+	
+	callback(hash,response);
 		});
+		}
 	
 });
+// Is there really a race condition above?
+/*connection.query('INSERT INTO users (authorization_hash,user_name,user_phone_number,user_local_time,is_active,last_synced) VALUES ("'+hash+'","'+name+'","' + number+'","' +time+'","1","'+syncTime+'") ON DUPLICATE KEY UPDATE user_phone_number=user_phone_number',function(err,rows,fields){
+response.json(rows);
+});*/
 }
 
-function addNewUser(hash,name,number,time,syncTime){
 
-
-}
-
-var updateUserLocalTime = function(hash,number,time,syncTime){
+var updateUserLocalTime = function(hash,number,time,syncTime,response,callback){
 // First make sure that the hash matches
 	connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="'+number+'"',function(err,rows,fields){
-	console.log(rows);
 	if(rows[0] && rows[0]['authorization_hash']==hash){
-				connection.query('UPDATE users SET user_local_time = "' +time+'", last_synced = "'+ syncTime +'" WHERE user_id ="'+rows[0]['user_id']+'"',function(err,rows,fields){
-				if(err) throw err;
+		connection.query('UPDATE users SET user_local_time = "' +time+'", last_synced = "'+ syncTime +'" WHERE user_id ="'+rows[0]['user_id']+'"',function(err,rows,fields){
+			if(err) throw err;
 
-		
-						});
-				}
-	
+				callback(rows,response);
+				});
+		}
+	else{
+		// maybe we just need to send false and log rest of the information
+		response.write("false");
+		response.write("Incorrect Authorization");
+		response.end();
+	}
 	});
 
 }
 
 
-var getContactInfo = function(hash,number){
-// Verify hash for the phone_number, retrieve the id and use that to get all the contact lists info
-connection.query('SELECT contact_id FROM contact_mapping WHERE user_id =(SELECT user_id FROM users WHERE user_phone_number="' + number +'")',function(err,rows,fields){
-if(err) throw err;
-var list =[];
-for(row in rows){
-list.push(rows[row].contact_id);
-}
-console.log(list);
-if(rows[0]){
-connection.query('SELECT * FROM users WHERE user_id IN('+list+')',function(err,rows,fields){
-if(err) throw err;
-console.log(rows);
+var getContactInfo = function(hash,number,response,callback){
+	connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number ="' +number+'"',function(err,rows,fields){
+		if(rows[0] && rows[0]['authorization_hash']==hash){
+			connection.query('SELECT contact_id FROM contact_mapping WHERE user_id ='+rows[0]['user_id'],function(err,rows,fields){
+				if(err) throw err;
+				if(rows[0]){
+					var list =[];
+					for(row in rows){
+					list.push(rows[row].contact_id);
+					}
+					connection.query('SELECT * FROM users WHERE user_id IN('+list+')',function(err,rows,fields){
+					if(err) throw err;
+					callback(rows,response);
+					});
+				
+				}
+				else{
+					response.json(rows);
+					response.end();
+				}				
+			});
+		}
+		else{
+			response.write("false\n");
+			response.write("Incorrect Authorization");
+			response.end();
+		}	
 
-});}
-});
+	});
 
 }  
 
@@ -137,16 +158,27 @@ connectToDb : function(){
 	createConnection();
 	
 },
-addUser : function(hash,name,number,time,syncTime){
-	addNewUser(hash,name,number,time,syncTime);
+addUser : function(hash,name,number,time,syncTime,response){
+	addNewUser(hash,name,number,time,syncTime,response,function(authorization_hash,response){
+		response.json(200,{'unique hash' : authorization_hash});
+		response.end();
+	 });
 	
 },
-updateUserLocalTime : function(hash,number,time,syncTime){
-	updateUserLocalTime(hash,number,time,syncTime);
+updateUserLocalTime : function(hash,number,time,syncTime,response){
+	updateUserLocalTime(hash,number,time,syncTime,response,function(rows,response){
+	// Do we want to do something with the rows or just say true;
+	//response.json(200,rows);
+	response.json(200,true);
+	response.end();
+	});
 },
 
-getContactInfo : function(hash,number){
-	getContactInfo(hash,number);
+getContactInfo : function(hash,number,response){
+	getContactInfo(hash,number,response,function(rows,response){
+		response.json(200,rows);
+		response.end();
+	});
 
 },
 updateContactInfo : function(hash,number,contacts){

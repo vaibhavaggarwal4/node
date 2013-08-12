@@ -19,6 +19,7 @@ var crypto = require('./crypto');
 app.get('/testConnection/',function(request,response){
 	
 response.json("Connected");
+
 response.end();
 });
 
@@ -34,38 +35,28 @@ app.post('/user',function(request,response){
 	
 
 // TODO: set the response headers
-		var date = new Date();
-
-console.log(request.body['unique_hash']);
-		if(request.body['unique_hash'] && request.body['phone_number']){
+	var date = new Date();
+	if(request.body['unique_hash'] && request.body['phone_number']){
 			
-			db.updateUserLocalTime(request.body['unique_hash'],request.body['phone_number'],request.body['local_time'],date.getTime());
-			response.json(200,{"status" : true});
-			}
+		db.updateUserLocalTime(request.body['unique_hash'],request.body['phone_number'],request.body['local_time'],date.getTime(),response);
+			
+		}
 			
 			
 	if(!request.body['unique_hash']){
 		var hash = crypto.generateHash(request.body['name'] + request.body['phone_number']+date.getTime());
 		// pass name, number, and hash to the function
-		var result  = db.addUser(hash,request.body['name'], request.body['phone_number'],request.body['local_time'],date.getTime());
-		console.log(result);
-		// result is not correct, take care of it async
-		if(result){
-				response.json(200,{"uniquehash" :hash});
-					}
-		else{
-		response.json(200,"User already exists");
-			}
+		db.addUser(hash,request.body['name'], request.body['phone_number'],request.body['local_time'],date.getTime(),response);
+		// We are passing response object to mysql and will have it send the response as appropriate
 	}
 
-	response.end();
+	//response.end();
 });
 
 app.get('/user',function(request,response){
 //response.set({"content-type":"text/json"});
-db.getContactInfo(request.query.unique_hash,request.query.phone_number);
-response.json(200,request.query['unique_hash']);
-response.end();
+db.getContactInfo(request.query.unique_hash,request.query.phone_number,response);
+
 });
 
 
