@@ -1,5 +1,5 @@
 1. Pool the connection
 2. Optimize the queries
-3. callback return values
+3. callback return values - passing response object to sql class! is this a good way?
 4. set response header and content-type
 5. Escape the sql parameters to stop avoid SQL injection
