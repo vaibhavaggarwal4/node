@@ -17,8 +17,10 @@ var db= require('./mysql');
 db.connectToDb();
 var crypto = require('./crypto');
 app.get('/testConnection/',function(request,response){
-	
-response.json("Connected");
+response.set({"content-type":"text/json"});
+
+var testObj = {"connected" : "True"};
+response.json(200,testObj);
 
 response.end();
 });
@@ -45,31 +47,24 @@ app.post('/user',function(request,response){
 			
 	if(!request.body['unique_hash']){
 		var hash = crypto.generateHash(request.body['name'] + request.body['phone_number']+date.getTime());
-		// pass name, number, and hash to the function
 		db.addUser(hash,request.body['name'], request.body['phone_number'],request.body['local_time'],date.getTime(),response);
-		// We are passing response object to mysql and will have it send the response as appropriate
 	}
 
 	//response.end();
 });
 
 app.get('/user',function(request,response){
-//response.set({"content-type":"text/json"});
 db.getContactInfo(request.query.unique_hash,request.query.phone_number,response);
 
 });
 
 
-
-/*var contactList = ["6507437883","6501234123","6505678567","9047654987","609876453"];
-db.updateContactInfo("hash","7019361484",contactList);*/
 app.post('/user/contacts',function(request,response){
 
-// parse the contacts from the response
-// send the array to mysql class
-// It will do the rest
-// send a response to the client telling the contact list was updated, or if there weren't any changes.
-// to get the updated contact time, we will have a get request
+
+// verify that all these parameters do exist before calling the database operation
+db.updateContactInfo(request.body.unique_hash,request.body.phone_number,request.body.contacts,response);
+
 
 });
 
