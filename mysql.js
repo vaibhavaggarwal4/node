@@ -1,6 +1,6 @@
 //-----------------------------------------
 // 		Author: Vaibhav Aggarwal								   
-//		Last updated: 08/01/2013		   
+//		Last updated: 09/01/2013		   
 //----------------------------------------- 
  
  /*
@@ -47,11 +47,11 @@ var addNewUser = function(hash,name,number,time,syncTime,response,callback){
 connection.query('SELECT user_id FROM users WHERE user_phone_number ="' +number+'"',function(err,rows,fields){
 
 	if(rows[0]){
-		response.json(200,false);
+		response.json(200,{"status":"false","description":"User already exists"});
 		response.end();
 	}
 	
-	else{connection.query('INSERT INTO users (authorization_hash,user_name,user_phone_number,user_local_time,is_active,last_synced) VALUES ("'+hash+'","'+name+'","' + number+'","' +time+'","1","'+syncTime+'")',function(err,rows,fields){
+	else{connection.query('INSERT INTO users (authorization_hash,user_name,user_phone_number,user_local_time,is_active,last_synced) VALUES ("'+hash+'","'+name+'","' + number+'","' +time+'","1","'+syncTime+'")ON DUPLICATE KEY UPDATE user_phone_number=user_phone_number',function(err,rows,fields){
 	if(err) throw err;
 	
 	callback(hash,response);
@@ -157,7 +157,37 @@ connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_
 
 
 }
-       
+
+var updateCalendarInfo = function(hash,number,calendar,response,callback){      
+var userID="";
+connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number + '"',function(err,rows,fields){
+	if(err) throw err;
+	if(rows[0]['authorization_hash'] == hash){
+		userID=rows[0].user_id;
+		var insertValues="";
+		for(var index in calendar){
+			insertValues = insertValues+"("+userID+","+calendar[index].start_time+","+calendar[index].end_time+"),";
+		
+		}
+		insertValues = insertValues.substring(0,insertValues.length-1);
+		
+			connection.query('INSERT IGNORE into meetings (user_id,start_time,end_time) VALUES ' +insertValues, function(err,rows,fields){
+				if(err) throw err;
+				callback(rows,response);
+
+				});
+	}	
+});
+}
+
+deletePastMeetings = function(callback){
+	connection.query('DELETE from meetings WHERE past=1',function(err,rows,fields){
+		if(err) throw err;
+		callback(rows,"");
+	
+	});
+}
+
 
 module.exports={
 
@@ -167,7 +197,7 @@ connectToDb : function(){
 },
 addUser : function(hash,name,number,time,syncTime,response){
 	addNewUser(hash,name,number,time,syncTime,response,function(authorization_hash,response){
-		response.json(200,{'unique hash' : authorization_hash});
+		response.json(200,{'unique_hash' : authorization_hash});
 		response.end();
 	 });
 	
@@ -193,6 +223,21 @@ updateContactInfo : function(hash,number,contacts,response){
 	response.json(200,{"Status":"True"});
 	response.json(rows);
 	response.end();
+	});
+},
+
+updateCalendarInfo : function(hash,number,calendar,response){
+	updateCalendarInfo(hash,number,calendar,response,function(rows,response){
+	console.log(rows);
+		//response -> true
+		//response.end
+	});
+	
+},
+
+deletePastMeetings : function(){
+	deletePastMeetings(function(rows,response){
+	console.log(rows);
 	});
 }
 

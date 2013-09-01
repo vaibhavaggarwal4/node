@@ -1,6 +1,6 @@
 //-----------------------------------------
 // 		Author: Vaibhav Aggarwal								   
-//		Last updated: 08/01/2013		   
+//		Last updated: 09/01/2013		   
 //----------------------------------------- 
  
  /*
@@ -10,6 +10,7 @@
 
 // get express and start the server
 var express = require('express');
+var schedule=require('node-schedule');
 var app = express();
 app.use(express.bodyParser());
 // get the mysql file and connect to the database
@@ -67,6 +68,25 @@ db.updateContactInfo(request.body.unique_hash,request.body.phone_number,request.
 
 
 });
+
+
+app.post('user/calendar',function(request,response){
+
+db.updateCalendarMeetings(request.body.unique_hash,request.body.phone_number,request.body.calendar,response);
+});
+/*var response = "";
+var calendarItems = [{"start_time":0800,"end_time":0900},{"start_time":1030,"end_time":1130},{"start_time":1330,"end_time":1400},{"start_time":1600,"end_time":1700}];
+db.updateCalendarInfo("f8b02e92e32f62d878e3289e04044057","7019361484",calendarItems,response);
+db.deletePastMeetings();*/
+
+/*var interval = 0.1;
+var timeSplice = 60*1000;
+var jobRunInterval = interval * timeSplice;
+
+setInterval(function(){
+console.log("Hey there");
+},jobRunInterval);*/
+
 
 
 app.listen(process.env.PORT || 8080);
