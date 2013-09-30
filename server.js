@@ -1,6 +1,6 @@
 //-----------------------------------------
 // 		Author: Vaibhav Aggarwal								   
-//		Last updated: 09/01/2013		   
+//		Last updated: 09/26/2013		   
 //----------------------------------------- 
  
  /*
@@ -48,7 +48,7 @@ app.post('/user',function(request,response){
 			
 	if(!request.body['unique_hash']){
 		var hash = crypto.generateHash(request.body['name'] + request.body['phone_number']+date.getTime());
-		db.addUser(hash,request.body['name'], request.body['phone_number'],request.body['local_time'],date.getTime(),response);
+		db.addUser(hash,request.body['name'], request.body['phone_number'],request.body['local_time'],parseInt(date.getTime()/1000),response);
 	}
 
 	//response.end();
@@ -74,6 +74,7 @@ app.post('user/calendar',function(request,response){
 
 db.updateCalendarMeetings(request.body.unique_hash,request.body.phone_number,request.body.calendar,response);
 });
+
 /*var response = "";
 var calendarItems = [{"start_time":0800,"end_time":0900},{"start_time":1030,"end_time":1130},{"start_time":1330,"end_time":1400},{"start_time":1600,"end_time":1700}];
 db.updateCalendarInfo("f8b02e92e32f62d878e3289e04044057","7019361484",calendarItems,response);
@@ -87,6 +88,9 @@ setInterval(function(){
 console.log("Hey there");
 },jobRunInterval);*/
 
+app.post('user/contacts/edit',function(request,response){
+	db.editUserContacts(request.body.unique_hash,request.body_phone_number,request.body.contacts,response); 
+});
 
 
 app.listen(process.env.PORT || 8080);

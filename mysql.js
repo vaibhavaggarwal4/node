@@ -1,6 +1,6 @@
 //-----------------------------------------
 // 		Author: Vaibhav Aggarwal								   
-//		Last updated: 09/01/2013		   
+//		Last updated: 09/26/2013		   
 //----------------------------------------- 
  
  /*
@@ -47,8 +47,9 @@ var addNewUser = function(hash,name,number,time,syncTime,response,callback){
 connection.query('SELECT user_id FROM users WHERE user_phone_number ="' +number+'"',function(err,rows,fields){
 
 	if(rows[0]){
-		response.json(200,{"status":"false","description":"User already exists"});
-		response.end();
+		response.writeHead(200, { 'Content-Type': 'application/json'});
+		response.end(JSON.stringify({"status":"false","description":"User already exists"}));
+		
 	}
 	
 	else{connection.query('INSERT INTO users (authorization_hash,user_name,user_phone_number,user_local_time,is_active,last_synced) VALUES ("'+hash+'","'+name+'","' + number+'","' +time+'","1","'+syncTime+'")ON DUPLICATE KEY UPDATE user_phone_number=user_phone_number',function(err,rows,fields){
@@ -78,15 +79,14 @@ var updateUserLocalTime = function(hash,number,time,syncTime,response,callback){
 		}
 	else{
 		// maybe we just need to send false and log rest of the information
-		response.write("false");
-		response.write("Incorrect Authorization");
-		response.end();
+		response.writeHead(200, { 'Content-Type': 'application/json'});
+		response.end(JSON.stringify({"status":"false","description":"Incorrect Authorization"}));
 	}
 	});
 
 }
 
-
+//TODO : Do not return the contact hashes! Duh
 var getContactInfo = function(hash,number,response,callback){
 	connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number ="' +number+'"',function(err,rows,fields){
 		if(rows[0] && rows[0]['authorization_hash']==hash){
@@ -104,28 +104,55 @@ var getContactInfo = function(hash,number,response,callback){
 				
 				}
 				else{
-					response.json(rows);
-					response.end();
+					response.writeHead(200, { 'Content-Type': 'application/json'});
+					response.end(JSON.stringify({"status":"true","description":"No contacts using the app"}));
+	
 				}				
 			});
 		}
 		else{
-			response.write("false\n");
-			response.write("Incorrect Authorization");
-			response.end();
-		}	
+			response.writeHead(200, { 'Content-Type': 'application/json'});
+		response.end(JSON.stringify({"status":"false","description":"Incorrect Authorization"}));
+	}	
 
 	});
 
 }  
+/*
+var getContactsWithMeetingInfo = function(){
+	var number = '7019361484';
+	var hash = 'f8b02e92e32f62d878e3289e04044057';
+	
+		connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number ="' +number+'"',function(err,rows,fields){
 
+		if(rows[0] && rows[0]['authorization_hash']==hash){
+					connection.query('SELECT contact_id FROM contact_mapping WHERE user_id ='+rows[0]['user_id'],function(err,rows,fields){
+				if(err) throw err;
+				if(rows[0]){
+					var contactList =[];
+					for(row in rows){
+					contactList.push(rows[row].contact_id);
+					}
+				connection.query('CREATE TEMPORARY TABLE contacts as (SELECT users.user_id,users.user_name,users.user_phone_number,users.user_local_time,users.last_synced,users.user_set_busy FROM users where users.user_id IN ('+contactList+'))',function(err,rows,fields){
+					if(err) throw err;
+					});
 
+					
+				}
 
+		
+			});
+		
+		}
+	});
+
+}
+getContactsWithMeetingInfo();
+*/
 
 // remove extraneous lines, check hash, decide what needs to be asynchronous and what not, and return to server
 var updateContactInfo = function(hash,number,contacts,response,callback){
 var userID="";
-// we again want to verify the hash first
 connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number +'"',function(err,rows,fields){
 	if(err) throw err;
 	if(rows[0]['authorization_hash']==hash){
@@ -147,9 +174,8 @@ connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_
 		});
 	}
 	else{
-		response.write("false\n");
-		response.write("Incorrect Authorization");
-		response.end();
+		response.writeHead(200, { 'Content-Type': 'application/json'});
+		response.end(JSON.stringify({"status":"false","description":"Incorrect Authorization"}));
 	}
 
 
@@ -157,7 +183,29 @@ connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_
 
 
 }
+var editUserContacts = function(hash,number,contacts,response,callback){
+	var userID="";
+	connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number +'"',function(err,rows,fields){
+		if(err) throw err;
+		if(rows[0]['authorization_hash']==hash){
+		
+			userID=rows[0].user_id;
+			connection.query('SELECT user_id FROM users WHERE user_phone_number IN ('+contacts+')',function(err,rows,fields){
+			if(err) throw err;
 
+			connection.query(' DELETE FROM contact_mapping WHERE contact_id in (' + rows+ ') AND  user_id='+userID , function(err,rows,fields){
+				if(err) throw err;
+				callback(rows,response);
+
+				});
+			});
+		}
+		else{
+				response.writeHead(200, { 'Content-Type': 'application/json'});
+				response.end(JSON.stringify({"status":"false","description":"Incorrect Authorization"}));
+			}
+	});
+}
 var updateCalendarInfo = function(hash,number,calendar,response,callback){      
 var userID="";
 connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number + '"',function(err,rows,fields){
@@ -180,7 +228,7 @@ connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_
 });
 }
 
-deletePastMeetings = function(callback){
+var deletePastMeetings = function(callback){
 	connection.query('DELETE from meetings WHERE past=1',function(err,rows,fields){
 		if(err) throw err;
 		callback(rows,"");
@@ -197,8 +245,9 @@ connectToDb : function(){
 },
 addUser : function(hash,name,number,time,syncTime,response){
 	addNewUser(hash,name,number,time,syncTime,response,function(authorization_hash,response){
-		response.json(200,{'unique_hash' : authorization_hash});
-		response.end();
+		response.writeHead(200,{'Content-Type':'application/json'});
+		var res = {"status":"True","unique_hash":authorization_hash};
+		response.end(JSON.stringify(res));
 	 });
 	
 },
@@ -206,23 +255,25 @@ updateUserLocalTime : function(hash,number,time,syncTime,response){
 	updateUserLocalTime(hash,number,time,syncTime,response,function(rows,response){
 	// Do we want to do something with the rows or just say true;
 	//response.json(200,rows);
-	response.json(200,true);
-	response.end();
+			response.writeHead(200,{'Content-Type':'application/json'});
+			response.end(JSON.stringify({"status":"true"}));
 	});
 },
 
 getContactInfo : function(hash,number,response){
 	getContactInfo(hash,number,response,function(rows,response){
-		response.json(200,rows);
-		response.end();
+	response.writeHead(200, { 'Content-Type': 'application/json'});
+	var res = {"status":"True","contacts":rows};
+    response.end(JSON.stringify(res));
+		//response.json(200,rows);
+		//response.end();
 	});
 
 },
 updateContactInfo : function(hash,number,contacts,response){
 	updateContactInfo(hash,number,contacts,response,function(rows,response){
-	response.json(200,{"Status":"True"});
-	response.json(rows);
-	response.end();
+		response.writeHead(200,{'Content-Type':'application/json'});
+		response.end(JSON.stringify({"status":"true"}));
 	});
 },
 
@@ -239,7 +290,27 @@ deletePastMeetings : function(){
 	deletePastMeetings(function(rows,response){
 	console.log(rows);
 	});
+},
+editUserContacts : function(hash,number,contacts,response){
+	editUserContacts(hash,number,contacts,response,function(rows,response){
+		response.writeHead(200,{'Content-Type':'application/json'});
+		response.end(JSON.stringify({"status":"true"}));
+	});
 }
 
 };
+
+/*CREATE TEMPORARY TABLE contacts as (SELECT users.user_id,users.user_name,users.user_phone_number,users.user_local_time,users.last_synced,users.user_set_busy FROM users where users.user_id IN (1,24,25)); 
+
+CREATE TEMPORARY TABLE temp as (SELECT * FROM meetings WHERE user_id in (24,25) AND start_time>755 AND start_time<855);
+
+CREATE TEMPORARY TABLE temp1 as (SELECT users.user_id,users.user_phone_number,temp.start_time,temp.end_time FROM users LEFT JOIN temp ON users.user_id= temp.user_id WHERE users.user_id in (24,25));
+
+SELECT contacts.`user_id`,contacts.`user_phone_number`,contacts.`user_name`,contacts.`user_local_time`,contacts.`last_synced`,contacts.`user_set_busy`,temp1.`start_time`,temp1.`end_time` FROM contacts LEFT JOIN temp1 ON contacts.user_id = temp1.user_id;
+
+DROP TABLE temp1
+
+*/
+
+
 
