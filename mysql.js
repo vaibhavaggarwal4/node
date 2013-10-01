@@ -86,7 +86,6 @@ var updateUserLocalTime = function(hash,number,time,syncTime,response,callback){
 
 }
 
-//TODO : Do not return the contact hashes! Duh
 var getContactInfo = function(hash,number,response,callback){
 	connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number ="' +number+'"',function(err,rows,fields){
 		if(rows[0] && rows[0]['authorization_hash']==hash){
@@ -97,7 +96,7 @@ var getContactInfo = function(hash,number,response,callback){
 					for(row in rows){
 					list.push(rows[row].contact_id);
 					}
-					connection.query('SELECT * FROM users WHERE user_id IN('+list+')',function(err,rows,fields){
+					connection.query('SELECT user_id,user_name,user_phone_number,user_local_time,has_viber,has_whatsapp,is_active,last_synced,user_set_busy FROM users WHERE user_id IN('+list+')',function(err,rows,fields){
 					if(err) throw err;
 					callback(rows,response);
 					});
@@ -235,7 +234,21 @@ var deletePastMeetings = function(callback){
 	
 	});
 }
+var getSelfStatus = function(hash,number,response,callback){
 
+	connection.query('SELECT * FROM users WHERE user_phone_number="' +number+'"',function(err,rows,fields){
+			if(err) throw err;
+			if(rows[0] && rows[0]['authorization_hash']==hash){
+				callback(rows,response);
+			}
+			else{
+					response.writeHead(200, { 'Content-Type': 'application/json'});
+					response.end(JSON.stringify({"status":"false","description":"Incorrect Authorization"}));
+
+			}
+	});
+
+}
 
 module.exports={
 
@@ -295,6 +308,15 @@ editUserContacts : function(hash,number,contacts,response){
 	editUserContacts(hash,number,contacts,response,function(rows,response){
 		response.writeHead(200,{'Content-Type':'application/json'});
 		response.end(JSON.stringify({"status":"true"}));
+	});
+},
+getSelfStatus : function(hash,number,response){
+	getSelfStatus(hash,number,response,function(rows,response){
+		response.writeHead(200, { 'Content-Type': 'application/json'});
+		var res = {"status":"True","details":rows};
+    	response.end(JSON.stringify(res));
+		
+	
 	});
 }
 

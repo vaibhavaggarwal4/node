@@ -59,7 +59,10 @@ db.getContactInfo(request.query.unique_hash,request.query.phone_number,response)
 
 });
 
+app.get('/user/self',function(request,response){
 
+	db.getSelfStatus(request.query.unique_hash,request.query.phone_number,response);
+});
 app.post('/user/contacts',function(request,response){
 
 
