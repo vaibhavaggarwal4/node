@@ -277,6 +277,60 @@ var updateAvailability = function(hash,number,availability,response,callback){
 
 }
 
+var updateViber = function(hash,number,viber,response,callback){
+	var userID="";
+	connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number + '"',function(err,rows,fields){
+		if(err) throw err;
+		if(rows[0]['authorization_hash']==hash){
+			userID=rows[0].user_id;
+			connection.query('UPDATE IGNORE users SET has_viber="'+viber+'" WHERE user_id="'+userID+'"',function(err,rows,fields){
+				if(err) {
+				throw err
+				response.writeHead(200, { 'Content-Type': 'application/json'});
+				response.end(JSON.stringify({"status":"false","description":"Could not change at this time"}));
+				}
+				else{
+					callback(rows,response);
+				}	
+			
+			});
+		}
+		else{
+				response.writeHead(200, { 'Content-Type': 'application/json'});
+				response.end(JSON.stringify({"status":"false","description":"Incorrect Authorization"}));
+		}
+	
+	});
+
+}
+
+var updateWhatsapp = function(hash,number,whatsapp,response,callback){
+	var userID="";
+	connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number + '"',function(err,rows,fields){
+		if(err) throw err;
+		if(rows[0]['authorization_hash']==hash){
+			userID=rows[0].user_id;
+			connection.query('UPDATE IGNORE users SET has_whatsapp="'+whatsapp+'" WHERE user_id="'+userID+'"',function(err,rows,fields){
+				if(err) {
+				throw err
+				response.writeHead(200, { 'Content-Type': 'application/json'});
+				response.end(JSON.stringify({"status":"false","description":"Could not change at this time"}));
+				}
+				else{
+					callback(rows,response);
+				}	
+			
+			});
+		}
+		else{
+				response.writeHead(200, { 'Content-Type': 'application/json'});
+				response.end(JSON.stringify({"status":"false","description":"Incorrect Authorization"}));
+		}
+	
+	});
+
+}
+
 module.exports={
 
 connectToDb : function(){
@@ -348,6 +402,22 @@ getSelfStatus : function(hash,number,response){
 },
 updateAvailability : function(hash,number,availability,response){
 	updateAvailability(hash,number,availability,response,function(rows,response){
+		response.writeHead(200,{'Content-Type':'application/json'});
+		response.end(JSON.stringify({"status":"true"}));
+	});
+
+
+},
+updateViber : function(hash,number,viber,response){
+	updateViber(hash,number,viber,response,function(rows,response){
+		response.writeHead(200,{'Content-Type':'application/json'});
+		response.end(JSON.stringify({"status":"true"}));
+	});
+
+
+},
+updateWhatsapp : function(hash,number,whatsapp,response){
+	updateWhatsapp(hash,number,whatsapp,response,function(rows,response){
 		response.writeHead(200,{'Content-Type':'application/json'});
 		response.end(JSON.stringify({"status":"true"}));
 	});

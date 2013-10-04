@@ -64,10 +64,9 @@ app.get('/user/self',function(request,response){
 	db.getSelfStatus(request.query.unique_hash,request.query.phone_number,response);
 });
 
-app.get('/user/self/available',function(request,response){
-	console.log(request.query.unique_hash + " " + request.query.phone_number + " " + request.query.availibility);
+app.post('/user/self/available',function(request,response){
 
-	db.updateAvailability(request.query.unique_hash,request.query.phone_number,request.query.availibility,response);
+	db.updateAvailability(request.body['unique_hash'],request.body['phone_number'],request.body['availability'],response);
 });
 
 app.post('/user/contacts',function(request,response){
@@ -80,9 +79,17 @@ db.updateContactInfo(request.body.unique_hash,request.body.phone_number,request.
 });
 
 
-app.post('user/calendar',function(request,response){
+app.post('/user/calendar',function(request,response){
 
-db.updateCalendarMeetings(request.body.unique_hash,request.body.phone_number,request.body.calendar,response);
+	db.updateCalendarMeetings(request.body.unique_hash,request.body.phone_number,request.body.calendar,response);
+});
+
+app.post('/user/self/viber',function(request,response){
+		db.updateViber(request.body['unique_hash'],request.body['phone_number'],request.body['viber'],response);
+});
+
+app.post('/user/self/whatsapp',function(request,response){
+		db.updateWhatsapp(request.body['unique_hash'],request.body['phone_number'],request.body['whatsapp'],response);
 });
 
 /*var response = "";
