@@ -250,67 +250,16 @@ var getSelfStatus = function(hash,number,response,callback){
 
 }
 
-var updateAvailability = function(hash,number,availability,response,callback){
+
+
+var changeStatus = function(hash,number,target,value,response,callback){
 	var userID="";
-	connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number + '"',function(err,rows,fields){
-		if(err) throw err;
-		if(rows[0]['authorization_hash']==hash){
-			userID=rows[0].user_id;
-			connection.query('UPDATE IGNORE users SET user_set_busy="'+availability+'" WHERE user_id="'+userID+'"',function(err,rows,fields){
-				if(err) {
-				throw err
-				response.writeHead(200, { 'Content-Type': 'application/json'});
-				response.end(JSON.stringify({"status":"false","description":"Could not change at this time"}));
-				}
-				else{
-					callback(rows,response);
-				}	
-			
-			});
-		}
-		else{
-				response.writeHead(200, { 'Content-Type': 'application/json'});
-				response.end(JSON.stringify({"status":"false","description":"Incorrect Authorization"}));
-		}
 	
-	});
-
-}
-
-var updateViber = function(hash,number,viber,response,callback){
-	var userID="";
 	connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number + '"',function(err,rows,fields){
 		if(err) throw err;
 		if(rows[0]['authorization_hash']==hash){
 			userID=rows[0].user_id;
-			connection.query('UPDATE IGNORE users SET has_viber="'+viber+'" WHERE user_id="'+userID+'"',function(err,rows,fields){
-				if(err) {
-				throw err
-				response.writeHead(200, { 'Content-Type': 'application/json'});
-				response.end(JSON.stringify({"status":"false","description":"Could not change at this time"}));
-				}
-				else{
-					callback(rows,response);
-				}	
-			
-			});
-		}
-		else{
-				response.writeHead(200, { 'Content-Type': 'application/json'});
-				response.end(JSON.stringify({"status":"false","description":"Incorrect Authorization"}));
-		}
-	
-	});
-
-}
-
-var updateWhatsapp = function(hash,number,whatsapp,response,callback){
-	var userID="";
-	connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number + '"',function(err,rows,fields){
-		if(err) throw err;
-		if(rows[0]['authorization_hash']==hash){
-			userID=rows[0].user_id;
-			connection.query('UPDATE IGNORE users SET has_whatsapp="'+whatsapp+'" WHERE user_id="'+userID+'"',function(err,rows,fields){
+			connection.query('UPDATE IGNORE users SET '+target+' ="'+value+'" WHERE user_id="'+userID+'"',function(err,rows,fields){
 				if(err) {
 				throw err
 				response.writeHead(200, { 'Content-Type': 'application/json'});
@@ -400,6 +349,115 @@ getSelfStatus : function(hash,number,response){
 	
 	});
 },
+
+changeStatus : function(hash,number,target,value,response){
+	changeStatus(hash,number,target,value,response,function(rows,response){
+		response.writeHead(200,{'Content-Type':'application/json'});
+		response.end(JSON.stringify({"status":"true"}));
+	});
+
+
+}
+
+
+};
+
+/*CREATE TEMPORARY TABLE contacts as (SELECT users.user_id,users.user_name,users.user_phone_number,users.user_local_time,users.last_synced,users.user_set_busy FROM users where users.user_id IN (1,24,25)); 
+
+CREATE TEMPORARY TABLE temp as (SELECT * FROM meetings WHERE user_id in (24,25) AND start_time>755 AND start_time<855);
+
+CREATE TEMPORARY TABLE temp1 as (SELECT users.user_id,users.user_phone_number,temp.start_time,temp.end_time FROM users LEFT JOIN temp ON users.user_id= temp.user_id WHERE users.user_id in (24,25));
+
+SELECT contacts.`user_id`,contacts.`user_phone_number`,contacts.`user_name`,contacts.`user_local_time`,contacts.`last_synced`,contacts.`user_set_busy`,temp1.`start_time`,temp1.`end_time` FROM contacts LEFT JOIN temp1 ON contacts.user_id = temp1.user_id;
+
+DROP TABLE temp1
+
+*/
+
+// Should I combine all these functions into 1, We can, but should we?
+
+/*
+var updateAvailability = function(hash,number,availability,response,callback){
+	var userID="";
+	connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number + '"',function(err,rows,fields){
+		if(err) throw err;
+		if(rows[0]['authorization_hash']==hash){
+			userID=rows[0].user_id;
+			connection.query('UPDATE IGNORE users SET user_set_busy="'+availability+'" WHERE user_id="'+userID+'"',function(err,rows,fields){
+				if(err) {
+				throw err
+				response.writeHead(200, { 'Content-Type': 'application/json'});
+				response.end(JSON.stringify({"status":"false","description":"Could not change at this time"}));
+				}
+				else{
+					callback(rows,response);
+				}	
+			
+			});
+		}
+		else{
+				response.writeHead(200, { 'Content-Type': 'application/json'});
+				response.end(JSON.stringify({"status":"false","description":"Incorrect Authorization"}));
+		}
+	
+	});
+
+}
+
+var updateViber = function(hash,number,viber,response,callback){
+	var userID="";
+	connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number + '"',function(err,rows,fields){
+		if(err) throw err;
+		if(rows[0]['authorization_hash']==hash){
+			userID=rows[0].user_id;
+			connection.query('UPDATE IGNORE users SET has_viber="'+viber+'" WHERE user_id="'+userID+'"',function(err,rows,fields){
+				if(err) {
+				throw err
+				response.writeHead(200, { 'Content-Type': 'application/json'});
+				response.end(JSON.stringify({"status":"false","description":"Could not change at this time"}));
+				}
+				else{
+					callback(rows,response);
+				}	
+			
+			});
+		}
+		else{
+				response.writeHead(200, { 'Content-Type': 'application/json'});
+				response.end(JSON.stringify({"status":"false","description":"Incorrect Authorization"}));
+		}
+	
+	});
+
+}
+
+var updateWhatsapp = function(hash,number,whatsapp,response,callback){
+	var userID="";
+	connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number + '"',function(err,rows,fields){
+		if(err) throw err;
+		if(rows[0]['authorization_hash']==hash){
+			userID=rows[0].user_id;
+			connection.query('UPDATE IGNORE users SET has_whatsapp="'+whatsapp+'" WHERE user_id="'+userID+'"',function(err,rows,fields){
+				if(err) {
+				throw err
+				response.writeHead(200, { 'Content-Type': 'application/json'});
+				response.end(JSON.stringify({"status":"false","description":"Could not change at this time"}));
+				}
+				else{
+					callback(rows,response);
+				}	
+			
+			});
+		}
+		else{
+				response.writeHead(200, { 'Content-Type': 'application/json'});
+				response.end(JSON.stringify({"status":"false","description":"Incorrect Authorization"}));
+		}
+	
+	});
+
+}*/
+/*
 updateAvailability : function(hash,number,availability,response){
 	updateAvailability(hash,number,availability,response,function(rows,response){
 		response.writeHead(200,{'Content-Type':'application/json'});
@@ -423,21 +481,6 @@ updateWhatsapp : function(hash,number,whatsapp,response){
 	});
 
 
-}
-
-};
-
-/*CREATE TEMPORARY TABLE contacts as (SELECT users.user_id,users.user_name,users.user_phone_number,users.user_local_time,users.last_synced,users.user_set_busy FROM users where users.user_id IN (1,24,25)); 
-
-CREATE TEMPORARY TABLE temp as (SELECT * FROM meetings WHERE user_id in (24,25) AND start_time>755 AND start_time<855);
-
-CREATE TEMPORARY TABLE temp1 as (SELECT users.user_id,users.user_phone_number,temp.start_time,temp.end_time FROM users LEFT JOIN temp ON users.user_id= temp.user_id WHERE users.user_id in (24,25));
-
-SELECT contacts.`user_id`,contacts.`user_phone_number`,contacts.`user_name`,contacts.`user_local_time`,contacts.`last_synced`,contacts.`user_set_busy`,temp1.`start_time`,temp1.`end_time` FROM contacts LEFT JOIN temp1 ON contacts.user_id = temp1.user_id;
-
-DROP TABLE temp1
-
+},
 */
-
-
 

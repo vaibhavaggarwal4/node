@@ -64,10 +64,7 @@ app.get('/user/self',function(request,response){
 	db.getSelfStatus(request.query.unique_hash,request.query.phone_number,response);
 });
 
-app.post('/user/self/available',function(request,response){
 
-	db.updateAvailability(request.body['unique_hash'],request.body['phone_number'],request.body['availability'],response);
-});
 
 app.post('/user/contacts',function(request,response){
 
@@ -84,12 +81,10 @@ app.post('/user/calendar',function(request,response){
 	db.updateCalendarMeetings(request.body.unique_hash,request.body.phone_number,request.body.calendar,response);
 });
 
-app.post('/user/self/viber',function(request,response){
-		db.updateViber(request.body['unique_hash'],request.body['phone_number'],request.body['viber'],response);
-});
 
-app.post('/user/self/whatsapp',function(request,response){
-		db.updateWhatsapp(request.body['unique_hash'],request.body['phone_number'],request.body['whatsapp'],response);
+
+app.post('/user/changeStatus',function(request,response){
+	db.changeStatus(request.body['unique_hash'],request.body['phone_number'],request.body['target'],request.body['value'],response);
 });
 
 /*var response = "";
@@ -97,13 +92,7 @@ var calendarItems = [{"start_time":0800,"end_time":0900},{"start_time":1030,"end
 db.updateCalendarInfo("f8b02e92e32f62d878e3289e04044057","7019361484",calendarItems,response);
 db.deletePastMeetings();*/
 
-/*var interval = 0.1;
-var timeSplice = 60*1000;
-var jobRunInterval = interval * timeSplice;
 
-setInterval(function(){
-console.log("Hey there");
-},jobRunInterval);*/
 
 app.post('user/contacts/edit',function(request,response){
 	db.editUserContacts(request.body.unique_hash,request.body_phone_number,request.body.contacts,response); 
@@ -111,3 +100,25 @@ app.post('user/contacts/edit',function(request,response){
 
 
 app.listen(process.env.PORT || 8080);
+
+
+/*
+app.post('/user/self/available',function(request,response){
+
+	db.updateAvailability(request.body['unique_hash'],request.body['phone_number'],request.body['availability'],response);
+});
+app.post('/user/self/viber',function(request,response){
+		db.updateViber(request.body['unique_hash'],request.body['phone_number'],request.body['viber'],response);
+});
+
+app.post('/user/self/whatsapp',function(request,response){
+		db.updateWhatsapp(request.body['unique_hash'],request.body['phone_number'],request.body['whatsapp'],response);
+});
+*/
+/*var interval = 0.1;
+var timeSplice = 60*1000;
+var jobRunInterval = interval * timeSplice;
+
+setInterval(function(){
+console.log("Hey there");
+},jobRunInterval);*/
