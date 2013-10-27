@@ -86,7 +86,7 @@ var updateUserLocalTime = function(hash,number,time,syncTime,response,callback){
 
 }
 
-var getContactInfo = function(hash,number,response,callback){
+var getContactInfo = function(hash,number,currentTime,response,callback){
 	connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number ="' +number+'"',function(err,rows,fields){
 		if(rows[0] && rows[0]['authorization_hash']==hash){
 			connection.query('SELECT contact_id FROM contact_mapping WHERE user_id ='+rows[0]['user_id'],function(err,rows,fields){
@@ -96,7 +96,13 @@ var getContactInfo = function(hash,number,response,callback){
 					for(row in rows){
 					list.push(rows[row].contact_id);
 					}
-					connection.query('SELECT user_id,user_name,user_phone_number,user_local_time,has_viber,has_whatsapp,is_active,last_synced,user_set_busy FROM users WHERE user_id IN('+list+')',function(err,rows,fields){
+					var query = 'SELECT * FROM (SELECT u.user_id,u.user_name,u.user_phone_number,u.user_local_time,u.has_viber,u.has_whatsapp,u.is_active,u.last_synced,u.user_set_busy,u.calendar_sync';
+					query+= ' FROM users u WHERE u.user_id IN ('+list+')) as u'; 
+				  	query+= ' LEFT JOIN';
+				  	query+= ' (SELECT c.user_id as cal_user_id, c.start_time,c.end_time FROM calendar_meetings c';
+				  	query+= ' WHERE c.start_time < '+ currentTime +' AND c.end_time > '+ currentTime +' AND c.user_id IN ('+list+')) as c ON c.cal_user_id =u.user_id'; 
+				    connection.query(query,function(err,rows,fields){
+					//connection.query('SELECT user_id,user_name,user_phone_number,user_local_time,has_viber,has_whatsapp,is_active,last_synced,user_set_busy FROM users WHERE user_id IN('+list+')',function(err,rows,fields){
 					if(err) throw err;
 					callback(rows,response);
 					});
@@ -149,7 +155,6 @@ var getContactsWithMeetingInfo = function(){
 getContactsWithMeetingInfo();
 */
 
-// remove extraneous lines, check hash, decide what needs to be asynchronous and what not, and return to server
 var updateContactInfo = function(hash,number,contacts,response,callback){
 var userID="";
 connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number +'"',function(err,rows,fields){
@@ -234,9 +239,12 @@ var deletePastMeetings = function(callback){
 	
 	});
 }
-var getSelfStatus = function(hash,number,response,callback){
-
-	connection.query('SELECT * FROM users WHERE user_phone_number="' +number+'"',function(err,rows,fields){
+var getSelfStatus = function(hash,number,currentTime,response,callback){
+var query = 'SELECT *  FROM';
+	query+= ' (SELECT * FROM users u WHERE u.user_phone_number="'+number+'")  as u';
+	query+= ' LEFT JOIN (SELECT * FROM calendar_meetings c WHERE c.user_phone_number ="'+number+'" AND c.`start_time`<121 AND c.`end_time`>121) as c ON u.`user_id`=c.`user_id`';
+	connection.query(query,function(err,rows,fields){
+	//connection.query('SELECT * FROM users WHERE user_phone_number="' +number+'"',function(err,rows,fields){
 			if(err) throw err;
 			if(rows[0] && rows[0]['authorization_hash']==hash){
 				callback(rows,response);
@@ -259,7 +267,7 @@ var changeStatus = function(hash,number,target,value,response,callback){
 		if(err) throw err;
 		if(rows[0]['authorization_hash']==hash){
 			userID=rows[0].user_id;
-			connection.query('UPDATE IGNORE users SET '+target+' ="'+value+'" WHERE user_id="'+userID+'"',function(err,rows,fields){
+			connection.query('UPDATE IGNORE users SET '+target+' ="'+value+'",calendar_sync="No" WHERE user_id="'+userID+'"',function(err,rows,fields){
 				if(err) {
 				throw err
 				response.writeHead(200, { 'Content-Type': 'application/json'});
@@ -277,6 +285,35 @@ var changeStatus = function(hash,number,target,value,response,callback){
 		}
 	
 	});
+
+}
+
+var calendarSync = function(hash,number,response,callback){
+
+	var userID="";
+		connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number + '"',function(err,rows,fields){
+				if(err) throw err;
+				if(rows[0]['authorization_hash']==hash){
+					userID=rows[0].user_id;
+					connection.query('UPDATE IGNORE users SET calendar_sync="Yes" WHERE user_id="'+userID+'"',function(err,rows,fields){
+				if(err) {
+				throw err
+				response.writeHead(200, { 'Content-Type': 'application/json'});
+				response.end(JSON.stringify({"status":"false","description":"Could not change at this time"}));
+				}
+				else{
+					callback(rows,response);
+				}	
+			
+			});
+
+				}
+				else{
+				response.writeHead(200, { 'Content-Type': 'application/json'});
+				response.end(JSON.stringify({"status":"false","description":"Incorrect Authorization"}));
+				}
+		
+		});
 
 }
 
@@ -303,8 +340,8 @@ updateUserLocalTime : function(hash,number,time,syncTime,response){
 	});
 },
 
-getContactInfo : function(hash,number,response){
-	getContactInfo(hash,number,response,function(rows,response){
+getContactInfo : function(hash,number,currentTime,response){
+	getContactInfo(hash,number,currentTime,response,function(rows,response){
 	response.writeHead(200, { 'Content-Type': 'application/json'});
 	var res = {"status":"True","contacts":rows};
     response.end(JSON.stringify(res));
@@ -340,8 +377,8 @@ editUserContacts : function(hash,number,contacts,response){
 		response.end(JSON.stringify({"status":"true"}));
 	});
 },
-getSelfStatus : function(hash,number,response){
-	getSelfStatus(hash,number,response,function(rows,response){
+getSelfStatus : function(hash,number,currentTime,response){
+	getSelfStatus(hash,number,currentTime,response,function(rows,response){
 		response.writeHead(200, { 'Content-Type': 'application/json'});
 		var res = {"status":"True","details":rows};
     	response.end(JSON.stringify(res));
@@ -352,6 +389,14 @@ getSelfStatus : function(hash,number,response){
 
 changeStatus : function(hash,number,target,value,response){
 	changeStatus(hash,number,target,value,response,function(rows,response){
+		response.writeHead(200,{'Content-Type':'application/json'});
+		response.end(JSON.stringify({"status":"true"}));
+	});
+
+
+},
+calendarSync : function(hash,number,response){
+	calendarSync(hash,number,response,function(rows,response){
 		response.writeHead(200,{'Content-Type':'application/json'});
 		response.end(JSON.stringify({"status":"true"}));
 	});

@@ -41,7 +41,7 @@ app.post('/user',function(request,response){
 	var date = new Date();
 	if(request.body['unique_hash'] && request.body['phone_number']){
 			
-		db.updateUserLocalTime(request.body['unique_hash'],request.body['phone_number'],request.body['local_time'],date.getTime(),response);
+		db.updateUserLocalTime(request.body['unique_hash'],request.body['phone_number'],request.body['local_time'],parseInt(date.getTime()/1000),response);
 			
 		}
 			
@@ -55,13 +55,15 @@ app.post('/user',function(request,response){
 });
 
 app.get('/user',function(request,response){
-db.getContactInfo(request.query.unique_hash,request.query.phone_number,response);
+	var date = new Date();
+db.getContactInfo(request.query.unique_hash,request.query.phone_number,parseInt(date.getTime()/1000),response);
 
 });
 
 app.get('/user/self',function(request,response){
+	var date = new Date();
 
-	db.getSelfStatus(request.query.unique_hash,request.query.phone_number,response);
+	db.getSelfStatus(request.query.unique_hash,request.query.phone_number,parseInt(date.getTime()/1000),response);
 });
 
 
@@ -85,6 +87,9 @@ app.post('/user/calendar',function(request,response){
 
 app.post('/user/changeStatus',function(request,response){
 	db.changeStatus(request.body['unique_hash'],request.body['phone_number'],request.body['target'],request.body['value'],response);
+});
+app.post('/user/calendarSync',function(request,response){
+	db.calendarSync(request.body['unique_hash'],request.body['phone_number'],response);
 });
 
 /*var response = "";
@@ -115,10 +120,10 @@ app.post('/user/self/whatsapp',function(request,response){
 		db.updateWhatsapp(request.body['unique_hash'],request.body['phone_number'],request.body['whatsapp'],response);
 });
 */
-/*var interval = 0.1;
+/*
+var interval = 0.1;
 var timeSplice = 60*1000;
 var jobRunInterval = interval * timeSplice;
-
 setInterval(function(){
-console.log("Hey there");
+console.log(date.getTime());
 },jobRunInterval);*/
