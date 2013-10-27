@@ -326,7 +326,7 @@ connectToDb : function(){
 addUser : function(hash,name,number,time,syncTime,response){
 	addNewUser(hash,name,number,time,syncTime,response,function(authorization_hash,response){
 		response.writeHead(200,{'Content-Type':'application/json'});
-		var res = {"status":"True","unique_hash":authorization_hash};
+		var res = {"status":"true","unique_hash":authorization_hash};
 		response.end(JSON.stringify(res));
 	 });
 	
@@ -343,7 +343,7 @@ updateUserLocalTime : function(hash,number,time,syncTime,response){
 getContactInfo : function(hash,number,currentTime,response){
 	getContactInfo(hash,number,currentTime,response,function(rows,response){
 	response.writeHead(200, { 'Content-Type': 'application/json'});
-	var res = {"status":"True","contacts":rows};
+	var res = {"status":"true","contacts":rows};
     response.end(JSON.stringify(res));
 		//response.json(200,rows);
 		//response.end();
@@ -380,7 +380,7 @@ editUserContacts : function(hash,number,contacts,response){
 getSelfStatus : function(hash,number,currentTime,response){
 	getSelfStatus(hash,number,currentTime,response,function(rows,response){
 		response.writeHead(200, { 'Content-Type': 'application/json'});
-		var res = {"status":"True","details":rows};
+		var res = {"status":"true","details":rows};
     	response.end(JSON.stringify(res));
 		
 	
