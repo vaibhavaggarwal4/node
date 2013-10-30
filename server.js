@@ -1,12 +1,9 @@
 //-----------------------------------------
 // 		Author: Vaibhav Aggarwal								   
-//		Last updated: 09/26/2013		   
+//		Last updated: 10/29/2013		   
 //----------------------------------------- 
  
- /*
- This serves as our server and will handle all incoming requests and will respond with data
- We will export all database functions from mysql.js
- */
+ 
 
 // get express and start the server
 var express = require('express');
@@ -37,7 +34,6 @@ Define all GET and POST routes here
 app.post('/user',function(request,response){
 	
 
-// TODO: set the response headers
 	var date = new Date();
 	if(request.body['unique_hash'] && request.body['phone_number']){
 			
@@ -51,12 +47,11 @@ app.post('/user',function(request,response){
 		db.addUser(hash,request.body['name'], request.body['phone_number'],request.body['local_time'],parseInt(date.getTime()/1000),response);
 	}
 
-	//response.end();
 });
 
 app.get('/user',function(request,response){
 	var date = new Date();
-db.getContactInfo(request.query.unique_hash,request.query.phone_number,parseInt(date.getTime()/1000),response);
+	db.getContactInfo(request.query.unique_hash,request.query.phone_number,parseInt(date.getTime()/1000),response);
 
 });
 
@@ -79,8 +74,7 @@ db.updateContactInfo(request.body.unique_hash,request.body.phone_number,request.
 
 
 app.post('/user/calendar',function(request,response){
-
-	db.updateCalendarMeetings(request.body.unique_hash,request.body.phone_number,request.body.calendar,response);
+	db.updateCalendarMeetings(request.body.unique_hash,request.body.phone_number,request.body.start_times,request.body.end_times,response);
 });
 
 
@@ -91,12 +85,6 @@ app.post('/user/changeStatus',function(request,response){
 app.post('/user/calendarSync',function(request,response){
 	db.calendarSync(request.body['unique_hash'],request.body['phone_number'],response);
 });
-
-/*var response = "";
-var calendarItems = [{"start_time":0800,"end_time":0900},{"start_time":1030,"end_time":1130},{"start_time":1330,"end_time":1400},{"start_time":1600,"end_time":1700}];
-db.updateCalendarInfo("f8b02e92e32f62d878e3289e04044057","7019361484",calendarItems,response);
-db.deletePastMeetings();*/
-
 
 
 app.post('user/contacts/edit',function(request,response){
