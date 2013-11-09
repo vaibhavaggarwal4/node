@@ -1,6 +1,6 @@
 //-----------------------------------------
 // 		Author: Vaibhav Aggarwal								   
-//		Last updated: 10/29/2013		   
+//		Last updated: 11/09/2013		   
 //----------------------------------------- 
  
  /*
@@ -96,13 +96,12 @@ var getContactInfo = function(hash,number,currentTime,response,callback){
 					for(row in rows){
 					list.push(rows[row].contact_id);
 				}
-					var query = 'SELECT * FROM (SELECT u.user_id,u.user_name,u.user_phone_number,u.user_local_time,u.has_viber,u.has_whatsapp,u.is_active,u.last_synced,u.user_set_busy,u.calendar_sync';
+					var query = 'SELECT * FROM (SELECT u.user_id,u.user_name,u.user_phone_number,u.user_local_time,u.has_viber,u.has_whatsapp,u.is_active,u.last_synced,u.user_set_busy,u.calendar_sync,u.calling_hours_start_time,u.calling_hours_end_time';
 					query+= ' FROM users u WHERE u.user_id IN ('+list+')) as u'; 
 				  	query+= ' LEFT JOIN';
 				  	query+= ' (SELECT c.user_id as cal_user_id, c.start_time,c.end_time FROM calendar_meetings c';
-				  	query+= ' WHERE c.start_time < '+ currentTime +' AND c.end_time > '+ currentTime +' AND c.user_id IN ('+list+')) as c ON c.cal_user_id =u.user_id'; 
+				  	query+= ' WHERE c.start_time < '+ currentTime +' AND c.end_time > '+ currentTime +' AND c.user_id IN ('+list+') HAVING min(c.start_time)) as c ON c.cal_user_id =u.user_id'; 
 				    connection.query(query,function(err,rows,fields){
-					//connection.query('SELECT user_id,user_name,user_phone_number,user_local_time,has_viber,has_whatsapp,is_active,last_synced,user_set_busy FROM users WHERE user_id IN('+list+')',function(err,rows,fields){
 					if(err) throw err;
 						callback(rows,response);
 					});
@@ -180,30 +179,36 @@ var editUserContacts = function(hash,number,contacts,response,callback){
 	});
 }
 var updateCalendarMeetings = function(hash,number,start_times,end_times,response,callback){      
-	var userID="";
+	if(typeof start_times =='undefined'){
+		response.writeHead(200, { 'Content-Type': 'application/json'});
+		response.end(JSON.stringify({"status":"true","description":"No meetings to sync"}));
+	}
+	else{
+		var userID="";
 
-	connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number + '"',function(err,rows,fields){
-		if(err) throw err;
-		if(rows[0]['authorization_hash'] == hash){
-			userID=rows[0].user_id;
-			var insertValues="";
-			for(var index in start_times){
-				insertValues = insertValues+"("+userID+", "+ number +", "+start_times[index]+", "+end_times[index]+"),";
+		connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number + '"',function(err,rows,fields){
+			if(err) throw err;
+			if(rows[0]['authorization_hash'] == hash){
+				userID=rows[0].user_id;
+				var insertValues="";
+				for(var index in start_times){
+					insertValues = insertValues+"("+userID+", "+ number +", "+start_times[index]+", "+end_times[index]+"),";
 		
+				}
+				insertValues = insertValues.substring(0,insertValues.length-1);
+				connection.query('INSERT IGNORE into calendar_meetings (user_id,user_phone_number,start_time,end_time) VALUES ' +insertValues, function(err,rows,fields){
+					if(err) throw err;
+						callback(rows,response);
+
+					});
+			
 			}
-			insertValues = insertValues.substring(0,insertValues.length-1);
-		
-			connection.query('INSERT IGNORE into calendar_meetings (user_id,user_phone_number,start_time,end_time) VALUES ' +insertValues, function(err,rows,fields){
-				if(err) throw err;
-					callback(rows,response);
-
-				});
-		}
-		else{
-				response.writeHead(200, { 'Content-Type': 'application/json'});
-				response.end(JSON.stringify({"status":"false","description":"Incorrect Authorization"}));
-		}	
-	});
+			else{
+					response.writeHead(200, { 'Content-Type': 'application/json'});
+					response.end(JSON.stringify({"status":"false","description":"Incorrect Authorization"}));
+			}	
+		});
+	}
 }
 
 var deletePastMeetings = function(callback){
@@ -218,7 +223,6 @@ console.log(currentTime);
 	var query = 'SELECT *  FROM';
 	query+= ' (SELECT * FROM users u WHERE u.user_phone_number="'+number+'")  as u';
 	query+= ' LEFT JOIN (SELECT * FROM calendar_meetings c WHERE c.user_phone_number ="'+number+'" AND c.`start_time`< ' + currentTime + ' AND c.`end_time`>'+ currentTime+') as c ON u.`user_id`=c.`user_id`';
-	console.log(query);
 	connection.query(query,function(err,rows,fields){
 			if(err) throw err;
 			if(rows[0] && rows[0]['authorization_hash']==hash){
@@ -317,7 +321,7 @@ updateUserLocalTime : function(hash,number,time,syncTime,response){
 getContactInfo : function(hash,number,currentTime,response){
 	getContactInfo(hash,number,currentTime,response,function(rows,response){
 		response.writeHead(200, { 'Content-Type': 'application/json'});
-		var res = {"status":"true","contacts":rows};
+		var res = {"status":"true","contacts":rows,"currentTime":currentTime};
     	response.end(JSON.stringify(res));
 		
 	});
@@ -353,7 +357,7 @@ editUserContacts : function(hash,number,contacts,response){
 getSelfStatus : function(hash,number,currentTime,response){
 	getSelfStatus(hash,number,currentTime,response,function(rows,response){
 		response.writeHead(200, { 'Content-Type': 'application/json'});
-		var res = {"status":"true","details":rows};
+		var res = {"status":"true","details":rows,"currentTime":currentTime};
     	response.end(JSON.stringify(res));
 		
 	
