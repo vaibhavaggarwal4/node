@@ -86,7 +86,9 @@ app.post('/user/calendarSync',function(request,response){
 	db.calendarSync(request.body['unique_hash'],request.body['phone_number'],response);
 });
 
-
+app.post('/user/changeCallingHours',function(request,response){
+	db.changeCallingHours(request.body['unique_hash'],request.body['phone_number'],request.body['start_time'],request.body['end_time'],response);
+});
 app.post('user/contacts/edit',function(request,response){
 	db.editUserContacts(request.body.unique_hash,request.body_phone_number,request.body.contacts,response); 
 });

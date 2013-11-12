@@ -296,6 +296,31 @@ var calendarSync = function(hash,number,response,callback){
 
 }
 
+var changeCallingHours = function(hash,number,start_time,end_time,response,callback){
+		var userID="";
+		connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="' + number + '"',function(err,rows,fields){
+			if(err) throw err;
+			if(rows[0]['authorization_hash']==hash){
+				userID=rows[0].user_id;
+				connection.query('UPDATE users SET `calling_hours_start_time` = "' + start_time + '",`calling_hours_end_time` = "'+end_time + '" WHERE user_id="'+userID+'"',function(err,rows,fields){
+						if(err){
+							throw err
+							response.writeHead(200, { 'Content-Type': 'application/json'});
+							response.end(JSON.stringify({"status":"false","description":"Could not change at this time"}));
+						}
+						else{
+							callback(rows,response);
+						}	
+					
+					});
+					
+				
+			}
+				
+		});
+
+
+}
 module.exports={
 
 connectToDb : function(){
@@ -379,8 +404,14 @@ calendarSync : function(hash,number,response){
 	});
 
 
+},
+changeCallingHours: function(hash,number,start_time,end_time,response){
+	changeCallingHours(hash,number,start_time,end_time,response,function(rows,response){
+		response.writeHead(200, { 'Content-Type': 'application/json'});
+		var res = {"status":"true",details:"Calling hours were updated successfully"};
+    	response.end(JSON.stringify(res));
+	});
 }
-
 
 };
 
