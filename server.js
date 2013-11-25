@@ -49,6 +49,11 @@ app.post('/user',function(request,response){
 
 });
 
+app.post('/user/verify',function(request,response){
+	db.verifyUser(request.body['unique_hash'],request.body['phone_number'],request.body['verification_code'],response);
+
+});
+
 app.get('/user',function(request,response){
 	var date = new Date();
 	db.getContactInfo(request.query.unique_hash,request.query.phone_number,parseInt(date.getTime()/1000),response);

@@ -43,7 +43,7 @@ console.log(rows);
 }
 
 
-var addNewUser = function(hash,name,number,time,syncTime,response,callback){
+var addNewUser = function(hash,name,number,time,syncTime,verification_code,response,callback){
 
 // check here if the user exists or not by querying the phone number first
 	connection.query('SELECT user_id FROM users WHERE user_phone_number ="' +number+'"',function(err,rows,fields){
@@ -55,7 +55,7 @@ var addNewUser = function(hash,name,number,time,syncTime,response,callback){
 		}
 	
 		else{
-			connection.query('INSERT INTO users (authorization_hash,user_name,user_phone_number,user_local_time,is_active,last_synced) VALUES ("'+hash+'","'+name+'","' + number+'","' +time+'","1","'+syncTime+'")ON DUPLICATE KEY UPDATE user_phone_number=user_phone_number',function(err,rows,fields){
+			connection.query('INSERT INTO users (authorization_hash,user_name,user_phone_number,user_local_time,is_active,last_synced,verification_code) VALUES ("'+hash+'","'+name+'","' + number+'","' +time+'","1","'+syncTime+'","'+verification_code+'")ON DUPLICATE KEY UPDATE user_phone_number=user_phone_number',function(err,rows,fields){
 			if(err) throw err;
 	
 			callback(hash,response);
@@ -67,7 +67,20 @@ var addNewUser = function(hash,name,number,time,syncTime,response,callback){
 
 }
 
+var verifyUser = function(hash,number,verification_code,response,callback){
+	connection.query('SELECT verification_code from users WHERE user_phone_number="' + number + '"',function(err,rows,fields){
+		if(err) throw err;
+			if(rows[0]['verification_code']==verification_code){
+						callback(rows,response);
+						// update is_verified to true
 
+			}
+			else{
+				response.writeHead(200, { 'Content-Type': 'application/json'});
+				response.end(JSON.stringify({"status":"false","description":"Incorrect Verification Code"}));
+			}
+	});
+}
 var updateUserLocalTime = function(hash,number,time,syncTime,response,callback){
 // First make sure that the hash matches
 	connection.query('SELECT authorization_hash,user_id FROM users WHERE user_phone_number="'+number+'"',function(err,rows,fields){
@@ -328,12 +341,20 @@ connectToDb : function(){
 	
 },
 addUser : function(hash,name,number,time,syncTime,response){
-	addNewUser(hash,name,number,time,syncTime,response,function(authorization_hash,response){
+
+	addNewUser(hash,name,number,time,syncTime,Math.floor((Math.random()*9999)+1),response,function(authorization_hash,response){
 		response.writeHead(200,{'Content-Type':'application/json'});
 		var res = {"status":"true","unique_hash":authorization_hash};
 		response.end(JSON.stringify(res));
 	 });
 	
+},
+verifyUser : function(hash,number,verification_code,response){
+	verifyUser(hash,number,verification_code,response,function(rows,response){
+		response.writeHead(200,{'Content-Type':'application/json'});
+		response.end(JSON.stringify({"status":"true"}));
+	});
+
 },
 updateUserLocalTime : function(hash,number,time,syncTime,response){
 	updateUserLocalTime(hash,number,time,syncTime,response,function(rows,response){
